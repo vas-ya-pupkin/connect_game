@@ -112,19 +112,42 @@ class Game:
 
     def _is_current_player_a_winner(self) -> bool:
         """
-        Есть ли на поле последовательность достаточной для победы длины
+        Победил ли текущий игрок
         :return:
         """
-        for row in self.field.tolist() + np.rot90(self.field).tolist():
-            lenghts = [
-                len(list(x[1])) for x in
-                itertools.groupby(row) if
-                x[0] == self.PLAYERS[self.current_player]
-            ]  # длина всех последовательностей символов текущего игрока
-            if not lenghts:
-                continue
-            if max(lenghts) >= self.WINNING_LENGTH:
+        for row in self.field.tolist() + np.rot90(self.field).tolist():  # горизонталь/вертикаль
+            if self._is_winning_seq_present(row):
                 return True
+
+        lists = [self.field, np.rot90(self.field)]  # для одинаковой проверки диагоналей в обоих направлениях
+        for i in lists:
+            for no, row in enumerate(i):
+                diags = [np.diag(i, k=no), np.diag(i, k=-no)]  # одинаковое смещение вниз и вверх
+
+                if all([
+                    len(d) < self.WINNING_LENGTH for d in diags
+                ]):  # (проверяем длину обеих на случай несимметричности поля)
+                    continue
+
+                if any([
+                    self._is_winning_seq_present(x) for x in diags
+                ]):
+                    return True
+        return False
+
+    def _is_winning_seq_present(self, row):
+        """
+        Есть ли в списке последовательность достаточной для победы длины
+        :return:
+        """
+        lengths = [
+            len(list(x[1])) for x in
+            itertools.groupby(row) if
+            x[0] == self.PLAYERS[self.current_player]
+        ]  # длина всех последовательностей символов текущего игрока
+        if (lengths and
+                max(lengths) >= self.WINNING_LENGTH):
+            return True
         return False
 
     @property
